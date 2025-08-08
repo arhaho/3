@@ -2,27 +2,29 @@ name: Refresh OpenAlex data
 
 on:
   schedule:
-    - cron: '5 0 * * *'
+    - cron: '5 0 * * *'   # daily 00:05 UTC
   workflow_dispatch: {}
 
 permissions:
   contents: write
 
+defaults:
+  run:
+    working-directory: openalex-scholar-dashboard
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Debug checkout
+
+      - name: Debug paths
         run: |
           pwd
           ls -la
-          git status
-          echo "Branch: $GITHUB_REF"
+          ls -la scripts || true
 
       - uses: actions/setup-python@v5
         with:
@@ -30,16 +32,13 @@ jobs:
 
       - name: Install deps
         run: |
-          python -V
           python -m pip install --upgrade pip
           pip install requests
 
       - name: Build JSON
         env:
           OPENALEX_MAILTO: ${{ secrets.OPENALEX_MAILTO || 'YOUR_EMAIL@example.com' }}
-        run: |
-          set -e
-          python scripts/build.py
+        run: python scripts/build.py
 
       - name: Commit & push if changed
         run: |
